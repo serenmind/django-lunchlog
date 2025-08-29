@@ -6,6 +6,10 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.decorators import action
 from django.contrib.auth import login
+from .models import ReceiptImage
+
+
+from receipts.utils import upload_to_s3
 
 from .models import Receipt, PlaceInfo
 from .serializers import (
@@ -13,6 +17,7 @@ from .serializers import (
     PlaceInfoSerializer,
     UserSignupSerializer,
     LoginSerializer,
+    ReceiptImageSerializer,
 )
 
 
@@ -20,9 +25,9 @@ class SignupView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        ser = UserSignupSerializer(data=request.data)
-        ser.is_valid(raise_exception=True)
-        user = ser.save()
+        serialized_user = UserSignupSerializer(data=request.data)
+        serialized_user.is_valid(raise_exception=True)
+        user = serialized_user.save()
         return Response(
             {"id": user.id, "username": user.username}, status=status.HTTP_201_CREATED
         )
@@ -32,9 +37,9 @@ class LoginView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        ser = LoginSerializer(data=request.data)
-        ser.is_valid(raise_exception=True)
-        user = ser.validated_data["user"]
+        user_login_data = LoginSerializer(data=request.data)
+        user_login_data.is_valid(raise_exception=True)
+        user = user_login_data.validated_data["user"]
         login(request, user)
         return Response({"id": user.id, "username": user.username})
 
@@ -45,6 +50,8 @@ class ReceiptViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = Receipt.objects.filter(user=self.request.user).order_by("-date")
+
+        # filter queryset by month if month query is provided.
         month = self.request.query_params.get("month")
         if month:
             try:
@@ -55,7 +62,28 @@ class ReceiptViewSet(viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
+        # This ensures the logged-in user is attached
         serializer.save(user=self.request.user)
+
+    @action(detail=True, methods=["post"], url_path="upload-images")
+    def upload_images(self, request, pk=None):
+        """bulk upload images to a receipt"""
+        receipt = self.get_object()
+        files = request.FILES.getlist("images")
+
+        if not files:
+            return Response(
+                {"detail": "No images provided"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        uploaded = []
+        for file in files:
+            url = upload_to_s3(file, request.user.id, receipt.id)
+            img = ReceiptImage.objects.create(receipt=receipt, image_url=url)
+            uploaded.append(ReceiptImageSerializer(img).data)
+
+        return Response(uploaded, status=status.HTTP_201_CREATED)
 
 
 class RecommendationView(APIView):
