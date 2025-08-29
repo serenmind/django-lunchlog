@@ -1,3 +1,12 @@
 from django.contrib import admin
+from .models import Receipt, PlaceInfo
 
-# Register your models here.
+
+@admin.register(Receipt)
+class ReceiptAdmin(admin.ModelAdmin):
+    list_display = ("user", "restaurant_name", "date", "price")
+
+
+@admin.register(PlaceInfo)
+class PlaceInfoAdmin(admin.ModelAdmin):
+    list_display = ("name", "place_id", "rating")

@@ -27,5 +27,8 @@ PY
 echo "[entrypoint] running migrations..."
 ${POETRY} run python manage.py migrate --noinput
 
+echo "[entrypoint] collecting static files..."
+${POETRY} run python manage.py collectstatic --noinput
+
 echo "[entrypoint] database setup complete, executing: $@"
 exec "$@"

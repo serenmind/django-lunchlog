@@ -16,16 +16,16 @@ add:
 	$(POETRY) add $(p)
 
 migrate:
-	$(POETRY) run python manage.py migrate
+	docker compose exec web $(POETRY) run python manage.py migrate
 
 makemigrations:
-	$(POETRY) run python manage.py makemigrations $(a)
+	docker compose exec web $(POETRY) run python manage.py makemigrations $(a)
 
 createsuperuser:
-	$(POETRY) run python manage.py createsuperuser
+	docker compose exec web $(POETRY) run python manage.py createsuperuser
 
 collectstatic:
-	$(POETRY) run python manage.py collectstatic --noinput
+	docker compose exec web $(POETRY) run python manage.py collectstatic --noinput
 
 test:
 	$(POETRY) run pytest
