@@ -29,16 +29,18 @@ services:
       - redis
 
   celery-worker:
-      build: .
-      command: celery -A config worker -l info
-      volumes:
-        - .:/app
-      env_file:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A lunchlog worker -l info
+    volumes:
+      - .:/app:cached
+    env_file:
       - .env
-      depends_on:
-        - web
-        - redis
-        - db
+    depends_on:
+      - web
+      - redis
+      - db
 
 volumes:
   postgres_data:

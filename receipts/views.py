@@ -9,8 +9,6 @@ from django.contrib.auth import login
 from .models import ReceiptImage
 
 
-from receipts.utils import upload_to_s3
-
 from .models import Receipt, PlaceInfo
 from .serializers import (
     ReceiptSerializer,
@@ -19,7 +17,6 @@ from .serializers import (
     LoginSerializer,
     ReceiptImageSerializer,
 )
-
 
 class SignupView(APIView):
     permission_classes = [AllowAny]
@@ -65,7 +62,11 @@ class ReceiptViewSet(viewsets.ModelViewSet):
         # This ensures the logged-in user is attached
         serializer.save(user=self.request.user)
 
-    @action(detail=True, methods=["post"], url_path="upload-images")
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="upload-images",
+    )
     def upload_images(self, request, pk=None):
         """bulk upload images to a receipt"""
         receipt = self.get_object()
@@ -77,13 +78,34 @@ class ReceiptViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        uploaded = []
-        for file in files:
-            url = upload_to_s3(file, request.user.id, receipt.id)
-            img = ReceiptImage.objects.create(receipt=receipt, image_url=url)
-            uploaded.append(ReceiptImageSerializer(img).data)
+        created = []
+        errors = []
 
-        return Response(uploaded, status=status.HTTP_201_CREATED)
+        for idx, f in enumerate(files):
+            try:
+                # create model instance and let Django storage handle upload to S3
+                receipt_image = ReceiptImage(receipt=receipt)
+                # assign file to ImageField; saving the model triggers the storage backend
+                receipt_image.image = f
+                receipt_image.save()
+                created.append(ReceiptImageSerializer(receipt_image).data)
+            except Exception as exc:  # capture storage/validation errors per-file
+                errors.append({"filename": getattr(f, "name", str(idx)), "error": str(exc)})
+
+        if not created:
+            return Response(
+                {"detail": "Failed to upload any images", "errors": errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        status_code = status.HTTP_201_CREATED
+        payload = {"created": created}
+        if errors:
+            payload["errors"] = errors
+
+        return Response(payload, status=status_code)
+
+        
 
 
 class RecommendationView(APIView):

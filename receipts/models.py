@@ -21,11 +21,21 @@ class ReceiptImage(models.Model):
     receipt = models.ForeignKey(
         Receipt, on_delete=models.CASCADE, related_name="images"
     )
-    image_url = models.URLField()
+    # ImageField uploads directly to S3 using DEFAULT_FILE_STORAGE
+    image = models.ImageField(
+        upload_to="receipts/", null=True, blank=False
+    )
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"Image for Receipt {self.receipt.id}"
+
+    @property
+    def image_url(self):
+        """Return the full S3 URL for the image"""
+        if self.image:
+            return self.image.url
+        return ""
     
 
 class PlaceInfo(models.Model):

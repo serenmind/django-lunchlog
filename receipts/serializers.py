@@ -1,7 +1,5 @@
 from django.contrib.auth import get_user_model, authenticate
 from rest_framework import serializers
-
-from receipts.utils import upload_to_s3
 from .models import Receipt, PlaceInfo, ReceiptImage
 
 
