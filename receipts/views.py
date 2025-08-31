@@ -17,6 +17,13 @@ from .serializers import (
 )
 
 class SignupView(APIView):
+    """
+    SignupView handles user registration via POST requests.
+
+    POST:
+        Creates a new user with the provided data.
+        Returns the user's ID and username upon successful registration.
+    """
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -29,6 +36,16 @@ class SignupView(APIView):
 
 
 class LoginView(APIView):
+    """
+    LoginView handles user authentication via POST request using username.
+
+    This view expects a POST request with user credentials (username and password).
+    On successful authentication, it logs in the user and returns their ID and username.
+
+    Note:
+        This view currently supports login with username only.
+        Email login is not supported.
+    """
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -42,39 +59,21 @@ class LoginView(APIView):
 class ReceiptViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing Receipt objects.
-
-    Required params:
-        - serializer_class: ReceiptSerializer
-        - permission_classes: [IsAuthenticated]
-
-    Methods:
-        get_queryset(self) -> Receipt.objects.all().__class__:
-            Returns a queryset of Receipt objects belonging to the authenticated user,
-            optionally filtered by the 'month' query parameter.
-
-            Query Params:
-                - month (int, optional): Filters receipts by the given month (1-12).
-
-        perform_create(self, serializer: ReceiptSerializer) -> None:
-            Associates the created Receipt object with the authenticated user.
-
-        upload_images(self, request, pk: int = None) -> Response:
-            Bulk uploads images to a specific receipt.
-
-            Request:
-                - images (list of files): Multiple image files to be uploaded.
-
-            Responses:
-                - 201 Created: Returns serialized data of successfully uploaded images.
-                - 400 Bad Request: If no images are provided or all uploads fail, returns error details.
+    Provides CRUD operations and image upload for receipts.
     """
     serializer_class = ReceiptSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        """
+        Returns a queryset of Receipt objects belonging to the authenticated user,
+        optionally filtered by the 'month' query parameter.
+
+        Query Params:
+            - month (int, optional): Filters receipts by the given month (1-12).
+        """
         qs = Receipt.objects.filter(user=self.request.user).order_by("-date")
 
-        # filter queryset by month if month query is provided.
         month = self.request.query_params.get("month")
         if month:
             try:
@@ -85,7 +84,9 @@ class ReceiptViewSet(viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
-        # This ensures the logged-in user is attached
+        """
+        Associates the created Receipt object with the authenticated user.
+        """
         serializer.save(user=self.request.user)
 
     @action(
@@ -94,7 +95,16 @@ class ReceiptViewSet(viewsets.ModelViewSet):
         url_path="upload-images",
     )
     def upload_images(self, request, pk=None):
-        """bulk upload images to a receipt"""
+        """
+        Bulk uploads images to a specific receipt.
+
+        Request:
+            - images (list of files): Multiple image files to be uploaded.
+
+        Responses:
+            - 201 Created: Returns serialized data of successfully uploaded images.
+            - 400 Bad Request: If no images are provided or all uploads fail, returns error details.
+        """
         receipt = self.get_object()
         files = request.FILES.getlist("images")
 
@@ -109,13 +119,11 @@ class ReceiptViewSet(viewsets.ModelViewSet):
 
         for idx, f in enumerate(files):
             try:
-                # create model instance and let Django storage handle upload to S3
                 receipt_image = ReceiptImage(receipt=receipt)
-                # assign file to ImageField; saving the model triggers the storage backend
                 receipt_image.image = f
                 receipt_image.save()
                 created.append(ReceiptImageSerializer(receipt_image).data)
-            except Exception as exc:  # capture storage/validation errors per-file
+            except Exception as exc:
                 errors.append({"filename": getattr(f, "name", str(idx)), "error": str(exc)})
 
         if not created:

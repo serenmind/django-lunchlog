@@ -13,9 +13,17 @@ api_key = getattr(settings, "GOOGLE_PLACES_API_KEY", None)
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=10)
 def fetch_places_for_receipt(self, receipt_id, address):
-    """Fetch up to 10 lunch places using Google Places Text Search near the provided address.
-
-    Saves unique PlaceInfo records.
+    """Fetch up to 10 lunch places near the provided address using Google Places Text Search API.
+    Args:
+        receipt_id (int): The ID of the receipt for which to fetch places.
+        address (str): The address near which to search for lunch places.
+    Returns:
+        list: A list of saved place IDs.
+    Notes:
+        - Only 10 places are saved in the database for this test implementation; this limit can be changed if required.
+        - If places for the given address already exist in the database, the API call is skipped.
+        - Unique PlaceInfo records are created or updated for each place found.
+        - Requires a valid Google Places API key to be configured.
     """
     
     if not api_key:
