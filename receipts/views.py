@@ -1,5 +1,3 @@
-from datetime import datetime
-from django.db.models import Q
 from rest_framework import viewsets, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -42,6 +40,34 @@ class LoginView(APIView):
 
 
 class ReceiptViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing Receipt objects.
+
+    Required params:
+        - serializer_class: ReceiptSerializer
+        - permission_classes: [IsAuthenticated]
+
+    Methods:
+        get_queryset(self) -> Receipt.objects.all().__class__:
+            Returns a queryset of Receipt objects belonging to the authenticated user,
+            optionally filtered by the 'month' query parameter.
+
+            Query Params:
+                - month (int, optional): Filters receipts by the given month (1-12).
+
+        perform_create(self, serializer: ReceiptSerializer) -> None:
+            Associates the created Receipt object with the authenticated user.
+
+        upload_images(self, request, pk: int = None) -> Response:
+            Bulk uploads images to a specific receipt.
+
+            Request:
+                - images (list of files): Multiple image files to be uploaded.
+
+            Responses:
+                - 201 Created: Returns serialized data of successfully uploaded images.
+                - 400 Bad Request: If no images are provided or all uploads fail, returns error details.
+    """
     serializer_class = ReceiptSerializer
     permission_classes = [IsAuthenticated]
 
@@ -109,11 +135,13 @@ class ReceiptViewSet(viewsets.ModelViewSet):
 
 
 class RecommendationView(APIView):
+    """
+    API view to provide top 10 recommended places, optionally filtered by location.
+    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         location = request.query_params.get("location")
-        # naive recommendation: select top-rated places in DB that match location in address
         qs = PlaceInfo.objects.all()
         if location:
             qs = qs.filter(address__icontains=location)
