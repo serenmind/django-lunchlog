@@ -86,7 +86,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Berlin'
 USE_I18N = True
 USE_TZ = True
 
@@ -134,3 +134,21 @@ STORAGES = {
         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
 }
+
+# Celery configuration - default to Redis service in docker-compose
+# Use environment override CELERY_BROKER_URL / CELERY_RESULT_BACKEND when provided
+REDIS_HOST = os.getenv("REDIS_HOST", "redis")
+REDIS_PORT = os.getenv("REDIS_PORT", "6379")
+
+# Celery broker and result backend
+CELERY_BROKER_URL = os.getenv(
+    "CELERY_BROKER_URL",
+    f"redis://{REDIS_HOST}:{REDIS_PORT}/0",
+)
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", CELERY_BROKER_URL)
+
+# Recommended serialization/settings
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = TIME_ZONE
