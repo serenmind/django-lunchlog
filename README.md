@@ -19,13 +19,9 @@ make build-up
 make test
 ```
 
-Configuration notes:
-- Set AWS S3 credentials in `.env.dev` and update `DEFAULT_FILE_STORAGE` in `config/settings.py` to enable uploads to S3.
-- Set `GOOGLE_PLACES_API_KEY` in `.env.dev` for the Celery task to fetch place details.
-- Celery worker runs in the `worker` service and expects Redis at `redis:6379`.
-
 Endpoints:
 - POST /auth/signup/
 - POST /auth/login/
 - /receipts/ (CRUD)
-- GET /recommendations/?location=<city>
+- /receipts/?month=<1-12> (CRUD)
+- GET /recommendations/?location=<adress>
