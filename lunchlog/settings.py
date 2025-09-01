@@ -113,12 +113,10 @@ AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
 AWS_S3_REGION_NAME = os.getenv("AWS_S3_REGION_NAME", "eu-central-1")
 
-# Recommended in latest django-storages
-AWS_QUERYSTRING_AUTH = False  # don’t append ?X-Amz- params to URLs
 AWS_DEFAULT_ACL = None  # disable automatic "public-read"
 
-AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com"
-MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
+# Signed URL expiry (seconds) used by django-storages S3Boto3Storage
+AWS_QUERYSTRING_EXPIRE = int(os.getenv("AWS_QUERYSTRING_EXPIRE", "3600"))
 
 # STORAGE BACKENDS
 STORAGES = {
