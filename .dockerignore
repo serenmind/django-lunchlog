@@ -1,0 +1,32 @@
+# Ignore git
+.git
+
+# Python artifacts
+__pycache__
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtualenv
+.venv
+venv
+env
+
+# Editor files
+.vscode
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files / secrets
+.env
+.env.*
+
+# Test caches
+.pytest_cache
+.coverage
+
+
+# Ignore GitHub workflow runs or Git data
+.github
