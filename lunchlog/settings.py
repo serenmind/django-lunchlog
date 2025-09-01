@@ -19,6 +19,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "storages",
     "receipts",
+    "users",
 ]
 
 MIDDLEWARE = [
@@ -94,8 +95,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.BasicAuthentication",
         "rest_framework.authentication.SessionAuthentication",
-        "rest_framework.authentication.TokenAuthentication",
     ],
     "DATE_INPUT_FORMATS": [
         "%Y-%m-%d",  # ISO
@@ -153,3 +154,7 @@ CELERY_TIMEZONE = TIME_ZONE
 
 # Google places API
 GOOGLE_PLACES_API_KEY = os.getenv("GOOGLE_PLACES_API_KEY")
+
+# Redirects
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/"

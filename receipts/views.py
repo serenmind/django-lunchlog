@@ -1,9 +1,8 @@
 from rest_framework import viewsets, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
-from django.contrib.auth import login
 from .models import ReceiptImage
 
 
@@ -11,50 +10,8 @@ from .models import Receipt, PlaceInfo
 from .serializers import (
     ReceiptSerializer,
     PlaceInfoSerializer,
-    UserSignupSerializer,
-    LoginSerializer,
     ReceiptImageSerializer,
 )
-
-class SignupView(APIView):
-    """
-    SignupView handles user registration via POST requests.
-
-    POST:
-        Creates a new user with the provided data.
-        Returns the user's ID and username upon successful registration.
-    """
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        serialized_user = UserSignupSerializer(data=request.data)
-        serialized_user.is_valid(raise_exception=True)
-        user = serialized_user.save()
-        return Response(
-            {"id": user.id, "username": user.username}, status=status.HTTP_201_CREATED
-        )
-
-
-class LoginView(APIView):
-    """
-    LoginView handles user authentication via POST request using username.
-
-    This view expects a POST request with user credentials (username and password).
-    On successful authentication, it logs in the user and returns their ID and username.
-
-    Note:
-        This view currently supports login with username only.
-        Email login is not supported.
-    """
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        user_login_data = LoginSerializer(data=request.data)
-        user_login_data.is_valid(raise_exception=True)
-        user = user_login_data.validated_data["user"]
-        login(request, user)
-        return Response({"id": user.id, "username": user.username})
-
 
 class ReceiptViewSet(viewsets.ModelViewSet):
     """

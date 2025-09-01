@@ -1,49 +1,50 @@
 # Makefile - common development tasks for lunchlog
 
-DOCKER_COMPOSE ?= docker compose
-POETRY ?= poetry
-
-.PHONY: install lock add migrate makemigrations createsuperuser collectstatic test build up build-up down shell recreate
+.PHONY: install lock add migrate makemigrations createsuperuser collectstatic test test-run test-exec build up build-up down shell recreate
 
 install:
-	$(POETRY) install
+	poetry install
 
 lock:
-	$(POETRY) lock
+	poetry lock
 
 add:
 	@if [ -z "$(p)" ]; then echo "Specify package with p=<pkg>"; exit 1; fi
-	$(POETRY) add $(p)
+	poetry add $(p)
 
 migrate:
-	docker compose exec web $(POETRY) run python manage.py migrate
+	docker compose exec web poetry run python manage.py migrate
 
 makemigrations:
-	docker compose exec web $(POETRY) run python manage.py makemigrations $(a)
+	docker compose exec web poetry run python manage.py makemigrations $(a)
 
 createsuperuser:
-	docker compose exec web $(POETRY) run python manage.py createsuperuser
+	docker compose exec web poetry run python manage.py createsuperuser
 
 collectstatic:
-	docker compose exec web $(POETRY) run python manage.py collectstatic --noinput
+	docker compose exec web poetry run python manage.py collectstatic --noinput
 
+# Run tests inside an already-running web container. This will fail if web is not running.
 test:
-	$(POETRY) run pytest
+	docker compose exec web poetry run pytest
 
 # Docker-related targets
 build:
-	$(DOCKER_COMPOSE) build --pull
+	docker compose build --pull
 
 up:
-	$(DOCKER_COMPOSE) up
+	# start services (foreground)
+	docker compose up
 
 build-up:
-	$(DOCKER_COMPOSE) up --build
+	# build and start services
+	docker compose up --build
 
 down:
-	$(DOCKER_COMPOSE) down
+	# stop and remove services
+	docker compose down
 
 shell:
-	$(DOCKER_COMPOSE) exec web /bin/sh
+	docker compose exec web /bin/sh
 
 recreate: down build up

@@ -11,8 +11,7 @@ logger = logging.getLogger(__name__)
 api_key = getattr(settings, "GOOGLE_PLACES_API_KEY", None)
 
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=10)
-def fetch_places_for_receipt(self, receipt_id, address):
+def _fetch_places_for_receipt(receipt_id, address):
     """Fetch up to 10 lunch places near the provided address using Google Places Text Search API.
     Args:
         receipt_id (int): The ID of the receipt for which to fetch places.
@@ -52,10 +51,7 @@ def fetch_places_for_receipt(self, receipt_id, address):
         data = resp.json()
     except Exception as exc:
         logger.exception('Google Places API request failed: %s', exc)
-        try:
-            raise self.retry(exc=exc)
-        except Exception:
-            return []
+        return []
 
     results = data.get('results', [])[:10]
     saved = []
@@ -78,3 +74,9 @@ def fetch_places_for_receipt(self, receipt_id, address):
         saved.append(obj.place_id)
 
     return saved
+
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=10)
+def fetch_places_for_receipt(self, receipt_id, address):
+    """Celery task wrapper that delegates to the plain function for easier testing."""
+    return _fetch_places_for_receipt(receipt_id, address)
