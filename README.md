@@ -123,7 +123,7 @@ Tests are executed inside the `web` container (so they can reach the Docker Post
   ```
 
 Notes:
-- Tests use `pytest` and `pytest-django`. These are included in the project's `pyproject.toml` so the Docker dev image has them installed during build.
+- Tests use `pytest` and `pytest-django`. These are included in the project's `pyproject.toml` so the Docker image has them installed during build.
 - Some tests mock external calls (S3 / Google Places) so they run offline.
 
 ---
@@ -145,9 +145,11 @@ Notes:
 
 ## Important notes & troubleshooting
 
-- If GitHub blocks pushes due to secret scanning, revoke the leaked keys immediately and remove secrets from commit history before pushing. Do not push `.env` or secrets.
-- To generate presigned S3 URLs the app uses django-storages / boto3. If you removed custom domain settings, signed URLs will use S3 endpoints.
-- The entrypoint script runs migrations/collectstatic only when needed (it uses Django checks), so container restarts are faster.
+- When fetching the uploaded image urls through respective API endpoints, everythime a new presigned S3 URLs will be generated with defined expiry date.
+- Uploaded images will be deleted also from S3 bucket if Receipt with image or any instance of Image is deleted from database.
+- User can singup using username and pasword. email and other fields are optional.
+- The entrypoint script runs migrations/collectstatic at container startup.
+- When a receipt is created with new address data, celery task retrieves the places to recommend matching the address value asynchroniously. For now only 10 places per address are saved in database for the sake of space management.
 
 ---
 
@@ -157,4 +159,5 @@ Notes:
 - POST /auth/login/ — login (DRF browsable)
 - POST /auth/logout/ — logout (DRF browsable)
 - /receipts/ — Receipt CRUD (upload-images action available on detail)
-- /recommendations/ — get recommended places
+- /receipts/?month=<1-12> — Receipts for given month
+- GET /recommendations/?location=<address> — get recommended places or optionally filter by location.
